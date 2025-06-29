@@ -22,6 +22,9 @@ func DlAddSearchDir(dir string) int {
 	if dir == "" {
 		return 0
 	}
+	mu.Lock()
+	userSearchPath = append(userSearchPath, dir)
+	mu.Unlock()
 	cdir, err := CanonicalizePath(dir)
 	if err != nil || cdir == "" {
 		return 0
@@ -41,6 +44,7 @@ func DlInsertSearchDir(before, dir string) int {
 	if dir == "" {
 		return 0
 	}
+	mu.Lock()
 	cdir, err := CanonicalizePath(dir)
 	if err != nil || cdir == "" {
 		return 0
@@ -69,6 +73,7 @@ func DlInsertSearchDir(before, dir string) int {
 	} else {
 		userSearchPath = append(userSearchPath[:idx], append([]string{cdir}, userSearchPath[idx:]...)...)
 	}
+	mu.Unlock()
 	return 0
 }
 
@@ -76,9 +81,14 @@ func DlInsertSearchDir(before, dir string) int {
 // Each entry is canonicalized and duplicates are dropped.
 func DlSetSearchPath(path string) int {
 	if path == "" {
+		mu.Lock()
 		userSearchPath = nil
+		mu.Unlock()
 		return 0
 	}
+	mu.Lock()
+	userSearchPath = strings.Split(path, ":")
+	mu.Unlock()
 	parts := strings.Split(path, ":")
 	seen := make(map[string]struct{})
 	userSearchPath = userSearchPath[:0]
@@ -101,6 +111,8 @@ func DlSetSearchPath(path string) int {
 
 // DlGetSearchPath returns the current module search path as a colon-separated string.
 func DlGetSearchPath() string {
+	mu.RLock()
+	defer mu.RUnlock()
 	return strings.Join(userSearchPath, ":")
 }
 
@@ -231,7 +243,9 @@ func DlForeachFile(searchPath string, fn func(string, interface{}) int, data int
 	if searchPath != "" {
 		dirs = strings.Split(searchPath, ":")
 	} else {
-		dirs = userSearchPath
+		mu.RLock()
+		dirs = append([]string(nil), userSearchPath...)
+		mu.RUnlock()
 	}
 	for _, dir := range dirs {
 		entries, err := os.ReadDir(dir)

@@ -35,6 +35,8 @@ func DlloaderAdd(vtable *Dlvtable) int {
 	if vtable.Priority != DlloaderPrepend && vtable.Priority != DlloaderAppend {
 		return 1
 	}
+	mu.Lock()
+	defer mu.Unlock()
 	if vtable.Priority == DlloaderPrepend {
 		loaders = append([]*Dlvtable{vtable}, loaders...)
 	} else {
@@ -46,6 +48,8 @@ func DlloaderAdd(vtable *Dlvtable) int {
 // DlloaderNext returns the index of the loader following loader.
 // Pass -1 to retrieve the first loader.
 func DlloaderNext(loader int) int {
+	mu.RLock()
+	defer mu.RUnlock()
 	if loader < 0 {
 		if len(loaders) > 0 {
 			return 0
@@ -60,6 +64,8 @@ func DlloaderNext(loader int) int {
 
 // DlloaderGet returns the vtable for loader index.
 func DlloaderGet(loader int) *Dlvtable {
+	mu.RLock()
+	defer mu.RUnlock()
 	if loader < 0 || loader >= len(loaders) {
 		return nil
 	}
@@ -68,6 +74,8 @@ func DlloaderGet(loader int) *Dlvtable {
 
 // DlloaderRemove removes and returns the loader with matching name.
 func DlloaderRemove(name string) *Dlvtable {
+	mu.Lock()
+	defer mu.Unlock()
 	for i, l := range loaders {
 		if l != nil && l.Name == name {
 			loaders = append(loaders[:i], loaders[i+1:]...)
@@ -79,6 +87,8 @@ func DlloaderRemove(name string) *Dlvtable {
 
 // DlloaderFind returns the first loader with matching name.
 func DlloaderFind(name string) *Dlvtable {
+	mu.RLock()
+	defer mu.RUnlock()
 	for _, l := range loaders {
 		if l != nil && l.Name == name {
 			return l
@@ -89,6 +99,7 @@ func DlloaderFind(name string) *Dlvtable {
 
 // DlloaderDump prints the list of loader names to stderr.
 func DlloaderDump() {
+	mu.RLock()
 	names := make([]string, 0, len(loaders))
 	for _, l := range loaders {
 		if l == nil {
@@ -100,6 +111,7 @@ func DlloaderDump() {
 		}
 		names = append(names, name)
 	}
+	mu.RUnlock()
 	if len(names) == 0 {
 		fmt.Fprintln(os.Stderr, "loaders: (empty)")
 	} else {
