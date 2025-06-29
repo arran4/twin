@@ -13,19 +13,3 @@
 #include "dl_helper.h"
 #include "util.h"
 
-#ifdef dlinit
-bool dlinit_once(void) {
-  static enum { no_init = 0, init_ok = 1, init_error = 2 } initialized = no_init;
-
-  if (initialized == no_init) {
-    int err = dlinit();
-    if (err != 0) {
-      Error(DLERROR);
-      initialized = init_error;
-    } else {
-      initialized = init_ok;
-    }
-  }
-  return initialized == init_ok;
-}
-#endif
