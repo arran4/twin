@@ -45,7 +45,10 @@ func DlOpenSearch(filename string, advise *DlAdvise) *DlHandle {
 			}
 		}
 	}
-	for _, dir := range userSearchPath {
+	mu.RLock()
+	dirs := append([]string(nil), userSearchPath...)
+	mu.RUnlock()
+	for _, dir := range dirs {
 		if dir == "" {
 			continue
 		}

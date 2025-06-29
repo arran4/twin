@@ -20,7 +20,11 @@ func DlExit() int {
 		return 1
 	}
 	initialized = false
+	mu.Lock()
 	loaders = nil
 	userSearchPath = nil
+	defaultPreloaded = nil
+	preloadedLists = nil
+	mu.Unlock()
 	return 0
 }
