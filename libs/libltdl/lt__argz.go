@@ -12,6 +12,52 @@ func ArgzCreateSep(str string, delim rune) []string {
 	return fields
 }
 
+// ArgzCreate returns a copy of argv as a new argz slice.
+func ArgzCreate(argv []string) []string {
+	if len(argv) == 0 {
+		return nil
+	}
+	out := make([]string, len(argv))
+	copy(out, argv)
+	return out
+}
+
+// ArgzCount returns the number of elements in argz.
+func ArgzCount(argz []string) int {
+	return len(argz)
+}
+
+// ArgzAdd appends str to argz if it is non-empty.
+func ArgzAdd(argz *[]string, str string) {
+	if str == "" {
+		return
+	}
+	*argz = append(*argz, str)
+}
+
+// ArgzAddSep splits str on delim and appends the fields to argz.
+func ArgzAddSep(argz *[]string, str string, delim rune) {
+	if str == "" {
+		return
+	}
+	parts := strings.FieldsFunc(str, func(r rune) bool { return r == delim })
+	for _, p := range parts {
+		if p != "" {
+			*argz = append(*argz, p)
+		}
+	}
+}
+
+// ArgzDelete removes the first occurrence of entry from argz.
+func ArgzDelete(argz *[]string, entry string) {
+	for i, v := range *argz {
+		if v == entry {
+			*argz = append((*argz)[:i], (*argz)[i+1:]...)
+			return
+		}
+	}
+}
+
 // ArgzAppend appends buf as a single element to argz.
 func ArgzAppend(argz *[]string, buf string) {
 	if buf != "" {
