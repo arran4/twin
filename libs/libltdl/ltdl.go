@@ -17,6 +17,7 @@ type DlHandle struct {
 var userSearchPath []string
 
 // DlAddSearchDir appends dir to the module search path.
+// The path is canonicalized and duplicates are ignored.
 func DlAddSearchDir(dir string) int {
 	if dir == "" {
 		return 0
@@ -24,32 +25,60 @@ func DlAddSearchDir(dir string) int {
 	mu.Lock()
 	userSearchPath = append(userSearchPath, dir)
 	mu.Unlock()
+	cdir, err := CanonicalizePath(dir)
+	if err != nil || cdir == "" {
+		return 0
+	}
+	for _, d := range userSearchPath {
+		if d == cdir {
+			return 0
+		}
+	}
+	userSearchPath = append(userSearchPath, cdir)
 	return 0
 }
 
 // DlInsertSearchDir inserts dir before the path element "before".
+// Both paths are canonicalized and duplicates are ignored.
 func DlInsertSearchDir(before, dir string) int {
 	if dir == "" {
 		return 0
 	}
 	mu.Lock()
+	cdir, err := CanonicalizePath(dir)
+	if err != nil || cdir == "" {
+		return 0
+	}
+	// Canonicalize the reference path as well
+	cbefore := before
+	if before != "" {
+		if b, err := CanonicalizePath(before); err == nil {
+			cbefore = b
+		}
+	}
+	for _, d := range userSearchPath {
+		if d == cdir {
+			return 0
+		}
+	}
 	idx := -1
 	for i, d := range userSearchPath {
-		if d == before {
+		if d == cbefore {
 			idx = i
 			break
 		}
 	}
 	if idx < 0 {
-		userSearchPath = append(userSearchPath, dir)
+		userSearchPath = append(userSearchPath, cdir)
 	} else {
-		userSearchPath = append(userSearchPath[:idx], append([]string{dir}, userSearchPath[idx:]...)...)
+		userSearchPath = append(userSearchPath[:idx], append([]string{cdir}, userSearchPath[idx:]...)...)
 	}
 	mu.Unlock()
 	return 0
 }
 
 // DlSetSearchPath sets the module search path to the colon-separated list path.
+// Each entry is canonicalized and duplicates are dropped.
 func DlSetSearchPath(path string) int {
 	if path == "" {
 		mu.Lock()
@@ -60,6 +89,23 @@ func DlSetSearchPath(path string) int {
 	mu.Lock()
 	userSearchPath = strings.Split(path, ":")
 	mu.Unlock()
+	parts := strings.Split(path, ":")
+	seen := make(map[string]struct{})
+	userSearchPath = userSearchPath[:0]
+	for _, p := range parts {
+		if p == "" {
+			continue
+		}
+		c, err := CanonicalizePath(p)
+		if err != nil || c == "" {
+			continue
+		}
+		if _, ok := seen[c]; ok {
+			continue
+		}
+		seen[c] = struct{}{}
+		userSearchPath = append(userSearchPath, c)
+	}
 	return 0
 }
 

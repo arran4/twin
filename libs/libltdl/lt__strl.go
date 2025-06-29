@@ -5,6 +5,9 @@ func LtStrlcpy(dst []byte, src string, dstsize int) int {
 	if dstsize == 0 {
 		return len(src)
 	}
+	if dstsize > len(dst) {
+		return len(src)
+	}
 	n := copy(dst[:dstsize-1], src)
 	if n < dstsize {
 		dst[n] = 0
@@ -24,6 +27,9 @@ func LtStrlcat(dst []byte, src string, dstsize int) int {
 			break
 		}
 		length++
+	}
+	if dstsize > len(dst) {
+		return length + len(src)
 	}
 	if length >= dstsize {
 		return length + len(src)
