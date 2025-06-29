@@ -32,10 +32,20 @@ or obtained by writing to the Free Software Foundation, Inc.,
 /* Only include this header file once. */
 #if !defined LTDL_H
 #define LTDL_H 1
+#ifndef LT_BEGIN_C_DECLS
+# ifdef __cplusplus
+#  define LT_BEGIN_C_DECLS extern "C" {
+#  define LT_END_C_DECLS }
+# else
+#  define LT_BEGIN_C_DECLS
+#  define LT_END_C_DECLS
+# endif
+#endif
+#ifndef LT_SCOPE
+# define LT_SCOPE extern
+#endif
 
-#include <libltdl/lt_system.h>
-#include <libltdl/lt_error.h>
-#include <libltdl/lt_dlloader.h>
+
 
 LT_BEGIN_C_DECLS
 
